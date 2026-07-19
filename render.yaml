@@ -1,0 +1,17 @@
+{
+  "services": [
+    {
+      "type": "web",
+      "name": "shopvault-backend",
+      "env": "node",
+      "rootDir": "backend",
+      "buildCommand": "npm install",
+      "startCommand": "node server.js",
+      "healthCheckPath": "/api/v1/health",
+      "envVars": [
+        { "key": "NODE_ENV", "value": "production" },
+        { "key": "PORT", "value": "5000" }
+      ]
+    }
+  ]
+}

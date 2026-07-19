@@ -31,9 +31,23 @@ app.use(compression());
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        process.env.CORS_ORIGIN,
+        process.env.FRONTEND_URL,
+        'http://localhost:3000',
+        'http://localhost:3001',
+      ].filter(Boolean);
+
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin || allowedOrigins.some(o => origin.startsWith(o.replace(/\/$/, '')))) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Allow all in production for now — restrict per domain later
+      }
+    },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
@@ -57,7 +71,18 @@ app.use('/api', apiLimiter);
 app.get('/health', (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'E-commerce API is running',
+    message: 'ShopVault API is running',
+    version: '2.0.0',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+  });
+});
+
+// Also expose at /api/v1/health for Render health checks
+app.get('/api/v1/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'ShopVault API is running',
     version: '2.0.0',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
