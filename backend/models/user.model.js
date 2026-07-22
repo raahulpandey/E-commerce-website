@@ -77,10 +77,10 @@ userSchema.index({ role: 1 });
 userSchema.index({ createdAt: -1 });
 
 // --- Pre-save Hook: Hash password before saving ---
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+// NOTE: Mongoose 9+ async hooks must NOT call next() — Promise resolution handles the chain
+userSchema.pre('save', async function () {
+  if (!this.isModified('password')) return;
   this.password = await bcrypt.hash(this.password, 12);
-  next();
 });
 
 // --- Instance Methods ---

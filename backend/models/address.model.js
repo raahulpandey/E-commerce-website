@@ -59,14 +59,14 @@ const addressSchema = new mongoose.Schema(
 addressSchema.index({ user: 1 });
 
 // Ensure only one default address per user
-addressSchema.pre('save', async function (next) {
+// NOTE: Mongoose 9+ async hooks must NOT call next()
+addressSchema.pre('save', async function () {
   if (this.isDefault) {
     await this.constructor.updateMany(
       { user: this.user, _id: { $ne: this._id } },
       { isDefault: false }
     );
   }
-  next();
 });
 
 const Address = mongoose.model('Address', addressSchema);
