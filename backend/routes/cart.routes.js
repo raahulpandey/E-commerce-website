@@ -19,8 +19,8 @@ const {
 router.use(protect);
 
 router.get('/', getCart);
-router.post('/', addToCartValidator, addToCart);
-router.patch('/:productId', updateCartValidator, updateCartItem);
+router.post('/', ...addToCartValidator, addToCart);
+router.patch('/:productId', ...updateCartValidator, updateCartItem);
 router.delete('/:productId', removeFromCart);
 router.delete('/', clearCart);
 

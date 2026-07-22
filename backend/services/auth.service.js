@@ -99,4 +99,45 @@ const changePassword = async (userId, { currentPassword, newPassword }) => {
   await user.save();
 };
 
-module.exports = { register, login, logout, getProfile, updateProfile, changePassword };
+/**
+ * Generate password reset token and store it on the user.
+ */
+const forgotPassword = async (email) => {
+  const user = await User.findOne({ email });
+  // Silently succeed even if email not found (prevents enumeration)
+  if (!user) return;
+
+  const crypto = require('crypto');
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+  user.passwordResetToken = hashedToken;
+  user.passwordResetExpires = Date.now() + 30 * 60 * 1000; // 30 minutes
+  await user.save({ validateBeforeSave: false });
+
+  // TODO: Send email with reset link
+  // For now, token is saved in DB. In production integrate Nodemailer here.
+  console.log(`Password reset token for ${email}: ${resetToken}`);
+};
+
+/**
+ * Reset password using token.
+ */
+const resetPassword = async (token, newPassword) => {
+  const crypto = require('crypto');
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() },
+  }).select('+password');
+
+  if (!user) throw new ApiError(400, 'Invalid or expired reset token.');
+
+  user.password = newPassword;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+  await user.save();
+};
+
+module.exports = { register, login, logout, getProfile, updateProfile, changePassword, forgotPassword, resetPassword };

@@ -72,4 +72,23 @@ const changePassword = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, 'Password changed. Please log in again.'));
 });
 
-module.exports = { register, login, logout, getProfile, updateProfile, changePassword };
+/**
+ * POST /api/v1/auth/forgot-password
+ */
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  await authService.forgotPassword(email);
+  // Always return success to prevent email enumeration
+  res.status(200).json(new ApiResponse(200, {}, 'If that email exists, a reset link has been sent.'));
+});
+
+/**
+ * POST /api/v1/auth/reset-password
+ */
+const resetPassword = asyncHandler(async (req, res) => {
+  const { token, password } = req.body;
+  await authService.resetPassword(token, password);
+  res.status(200).json(new ApiResponse(200, {}, 'Password reset successfully. Please log in.'));
+});
+
+module.exports = { register, login, logout, getProfile, updateProfile, changePassword, forgotPassword, resetPassword };

@@ -27,11 +27,11 @@ router.use(protect);
 router.get('/admin/all', adminOnly, getAllOrders);
 router.get('/admin/stats', adminOnly, getOrderStats);
 router.get('/admin/:id', adminOnly, getOrderByIdAdmin);
-router.patch('/admin/:id/status', adminOnly, updateOrderStatusValidator, updateOrderStatus);
+router.patch('/admin/:id/status', adminOnly, ...updateOrderStatusValidator, updateOrderStatus);
 router.delete('/admin/:id', adminOnly, deleteOrder);
 
 // ===================== USER ROUTES =====================
-router.post('/', createOrderValidator, createOrder);
+router.post('/', ...createOrderValidator, createOrder);
 router.get('/', getUserOrders);
 router.get('/:id', getOrderById);
 router.patch('/:id/cancel', cancelOrder);
