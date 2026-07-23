@@ -38,19 +38,21 @@ const SERVICEABLE_ZONES: Record<string, { city: string; state: string; days: num
   '190': { city: 'Srinagar', state: 'J&K', days: 6 },
 };
 
-function getDeliveryInfo(pincode: string) {
-  if (pincode.length !== 6 || !/^\d{6}$/.test(pincode)) return null;
+type DeliveryResult =
+  | { serviceable: true; city: string; state: string; days: number }
+  | { serviceable: false };
+
+function getDeliveryInfo(pincode: string): DeliveryResult {
+  if (pincode.length !== 6 || !/^\d{6}$/.test(pincode)) return { serviceable: false };
 
   const prefix3 = pincode.slice(0, 3);
-  const prefix2 = pincode.slice(0, 2); // fallback
 
-  const zone = SERVICEABLE_ZONES[prefix3] || SERVICEABLE_ZONES[prefix2 + '0'];
+  const zone = SERVICEABLE_ZONES[prefix3];
 
   if (!zone) {
     // Check if it's a valid Indian pincode format (starts with 1-9)
     const firstDigit = parseInt(pincode[0]);
     if (firstDigit >= 1 && firstDigit <= 9) {
-      // Serviceable but with longer delivery
       return { serviceable: true, city: 'Your Location', state: 'India', days: 7 };
     }
     return { serviceable: false };
@@ -71,7 +73,7 @@ interface DeliveryCheckerProps {
 
 export function DeliveryChecker({ className = '' }: DeliveryCheckerProps) {
   const [pincode, setPincode] = useState('');
-  const [result, setResult] = useState<ReturnType<typeof getDeliveryInfo> | null>(null);
+  const [result, setResult] = useState<DeliveryResult | null>(null);
   const [checked, setChecked] = useState(false);
 
   const handleCheck = () => {
@@ -116,7 +118,7 @@ export function DeliveryChecker({ className = '' }: DeliveryCheckerProps) {
         </div>
       ) : (
         <div className="space-y-2">
-          {result?.serviceable ? (
+          {result !== null && result.serviceable ? (
             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-3">
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
