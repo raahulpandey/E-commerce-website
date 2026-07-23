@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
@@ -85,7 +85,10 @@ export default function ProductDetailPage() {
   const isOutOfStock = product.stock === 0;
 
   // Determine if this product needs size/color selection
-  const categorySlug = (product.categoryName || '').toLowerCase().replace(/\s+/g, '-');
+  const rawCategory = product.categoryName
+    || (typeof product.category === 'object' && product.category !== null ? (product.category as any).name : '')
+    || (typeof product.category === 'string' ? product.category : '');
+  const categorySlug = rawCategory.toLowerCase().replace(/\s+/g, '-');
   const isClothing = CLOTHING_CATEGORIES.some(c => categorySlug.includes(c.replace('mens-', '').replace('womens-', '')));
   const isShoes = categorySlug.includes('shoe');
   const needsSize = isClothing || isShoes;

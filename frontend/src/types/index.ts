@@ -52,10 +52,14 @@ export interface Product {
   effectivePrice?: number;
   discountPercentage?: number;
   category: string | Category;
+  categoryName?: string;
   brand?: string;
   images: string[];
   stock: number;
   rating: ProductRating;
+  tags?: string[];
+  sku?: string;
+  isFeatured?: boolean;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
