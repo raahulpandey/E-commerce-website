@@ -6,6 +6,7 @@ import { Toaster } from 'sonner';
 import { useState } from 'react';
 import { useBootstrap } from '@/hooks/useBootstrap';
 import { CartDrawer } from '@/components/cart/CartDrawer';
+import { BackendWakeUp } from '@/components/common/BackendWakeUp';
 
 function BootstrapWrapper({ children }: { children: React.ReactNode }) {
   useBootstrap();
@@ -23,10 +24,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 60 * 1000, // 1 minute
-            gcTime: 5 * 60 * 1000, // 5 minutes
-            retry: 1,
+            staleTime: 5 * 60 * 1000,  // 5 minutes — don't refetch if data is fresh
+            gcTime: 30 * 60 * 1000,    // 30 minutes — keep in memory
+            retry: 2,
             refetchOnWindowFocus: false,
+            refetchOnReconnect: false,
           },
         },
       })
@@ -35,6 +37,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <QueryClientProvider client={queryClient}>
+        <BackendWakeUp />
         <BootstrapWrapper>{children}</BootstrapWrapper>
         <Toaster
           position="top-right"
