@@ -1,80 +1,162 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight } from 'lucide-react';
-import { categoryService } from '@/services/product.service';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { motion } from 'framer-motion';
+import { useState } from 'react';
 
-const DEFAULT_COLORS = [
-  'from-violet-500 to-indigo-600',
-  'from-rose-500 to-pink-600',
-  'from-amber-500 to-orange-600',
-  'from-teal-500 to-cyan-600',
-  'from-emerald-500 to-green-600',
-  'from-blue-500 to-indigo-500',
+const CATEGORIES = [
+  {
+    name: "Women's Fashion",
+    slug: 'womens-dresses',
+    emoji: '👗',
+    color: 'from-pink-400 to-rose-600',
+    image: 'https://cdn.dummyjson.com/products/images/womens-dresses/Black%20Women%20Coat/1.webp',
+    count: '2000+ styles',
+    tag: 'Trending',
+  },
+  {
+    name: "Men's Fashion",
+    slug: 'mens-shirts',
+    emoji: '👕',
+    color: 'from-blue-400 to-indigo-600',
+    image: 'https://cdn.dummyjson.com/products/images/mens-shirts/Blue%20&%20Black%20Check%20Shirt/1.webp',
+    count: '1500+ styles',
+    tag: 'New In',
+  },
+  {
+    name: 'Electronics',
+    slug: 'smartphones',
+    emoji: '📱',
+    color: 'from-gray-700 to-gray-900',
+    image: 'https://cdn.dummyjson.com/products/images/smartphones/iPhone%2015/1.webp',
+    count: '500+ products',
+    tag: 'Best Sellers',
+  },
+  {
+    name: 'Beauty',
+    slug: 'beauty',
+    emoji: '💄',
+    color: 'from-purple-400 to-pink-600',
+    image: 'https://cdn.dummyjson.com/products/images/beauty/Eyeshadow%20Palette%20with%20Mirror/1.webp',
+    count: '800+ products',
+    tag: 'Exclusive',
+  },
+  {
+    name: 'Footwear',
+    slug: 'mens-shoes',
+    emoji: '👟',
+    color: 'from-amber-400 to-orange-600',
+    image: 'https://cdn.dummyjson.com/products/images/mens-shoes/Casual%20Men%20Shoes/1.webp',
+    count: '1200+ pairs',
+    tag: 'Upto 50% Off',
+  },
+  {
+    name: 'Watches',
+    slug: 'mens-watches',
+    emoji: '⌚',
+    color: 'from-slate-600 to-slate-900',
+    image: 'https://cdn.dummyjson.com/products/images/mens-watches/Brown%20Leather%20Belt%20Watch/1.webp',
+    count: '300+ watches',
+    tag: 'Premium',
+  },
+  {
+    name: 'Bags',
+    slug: 'womens-bags',
+    emoji: '👜',
+    color: 'from-rose-300 to-pink-500',
+    image: 'https://cdn.dummyjson.com/products/images/womens-bags/Bag%20Set%203%20piece%20Faux%20Leather/1.webp',
+    count: '600+ bags',
+    tag: 'Stylish',
+  },
+  {
+    name: 'Skincare',
+    slug: 'skin-care',
+    emoji: '🧴',
+    color: 'from-green-400 to-teal-600',
+    image: 'https://cdn.dummyjson.com/products/images/skin-care/Hyaluronic%20Acid%20Serum/1.webp',
+    count: '400+ products',
+    tag: 'Glow Up',
+  },
 ];
 
 export function CategoryGrid() {
-  const { data: categories, isLoading } = useQuery({
-    queryKey: ['categories'],
-    queryFn: categoryService.getAll,
-  });
+  const [hovered, setHovered] = useState<number | null>(null);
 
   return (
-    <section className="py-16">
-      <div className="flex items-end justify-between mb-8">
+    <section className="py-12">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <p className="text-violet-600 dark:text-violet-400 text-sm font-semibold uppercase tracking-wider mb-2">
-            Explore
-          </p>
-          <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">
-            Shop by Category
-          </h2>
+          <p className="text-xs font-bold tracking-widest text-[#FF3F6C] uppercase mb-1">Shop by Category</p>
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white">What Are You Looking For?</h2>
         </div>
-        <Link href="/categories" className="hidden sm:flex items-center gap-1.5 text-sm font-semibold text-violet-600 dark:text-violet-400 hover:text-violet-700 transition-colors">
-          All Categories <ArrowRight className="h-4 w-4" />
+        <Link href="/categories"
+          className="hidden sm:inline-flex items-center gap-2 text-sm font-bold text-[#FF3F6C] border border-[#FF3F6C] px-5 py-2.5 rounded-full hover:bg-[#FF3F6C] hover:text-white transition-all duration-300">
+          VIEW ALL →
         </Link>
       </div>
 
-      {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-32" rounded="lg" />
-          ))}
-        </div>
-      ) : (
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={{ visible: { transition: { staggerChildren: 0.08 } }, hidden: {} }}
-          className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4"
-        >
-          {categories?.slice(0, 6).map((cat: any, i: number) => (
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        {CATEGORIES.map((cat, i) => {
+          const [imgErr, setImgErr] = useState(false);
+          return (
             <motion.div
-              key={cat._id}
-              variants={{ hidden: { opacity: 0, scale: 0.9 }, visible: { opacity: 1, scale: 1 } }}
+              key={cat.slug}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.07 }}
+              onMouseEnter={() => setHovered(i)}
+              onMouseLeave={() => setHovered(null)}
             >
-              <Link
-                href={`/shop?category=${cat.slug}`}
-                className={`group block rounded-2xl bg-gradient-to-br ${DEFAULT_COLORS[i % DEFAULT_COLORS.length]} p-5 text-center text-white hover:scale-105 hover:shadow-xl transition-all duration-300`}
-              >
-                {cat.image ? (
-                  <div className="relative h-12 w-12 mx-auto mb-3">
-                    <Image src={cat.image} alt={cat.name} fill className="object-contain" />
+              <Link href={`/shop?category=${cat.slug}`}>
+                <div className={`relative overflow-hidden rounded-2xl aspect-[3/4] bg-gradient-to-br ${cat.color} cursor-pointer group`}>
+                  {/* Product image */}
+                  {!imgErr ? (
+                    <Image
+                      src={cat.image}
+                      alt={cat.name}
+                      fill
+                      className="object-cover opacity-70 group-hover:opacity-90 group-hover:scale-110 transition-all duration-500"
+                      onError={() => setImgErr(true)}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-7xl">
+                      {cat.emoji}
+                    </div>
+                  )}
+
+                  {/* Gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                  {/* Tag badge */}
+                  <div className="absolute top-3 left-3">
+                    <span className="px-2.5 py-1 bg-white text-[#FF3F6C] text-xs font-black rounded-full tracking-wide">
+                      {cat.tag}
+                    </span>
                   </div>
-                ) : (
-                  <div className="text-3xl mb-3">{cat.icon || '🛍️'}</div>
-                )}
-                <p className="font-bold text-sm">{cat.name}</p>
+
+                  {/* Text content */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <p className="text-white font-black text-lg leading-tight">{cat.name}</p>
+                    <p className="text-white/70 text-xs mt-1">{cat.count}</p>
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: hovered === i ? 1 : 0, y: hovered === i ? 0 : 8 }}
+                      transition={{ duration: 0.25 }}
+                      className="mt-2"
+                    >
+                      <span className="inline-block text-xs bg-white text-slate-900 font-bold px-3 py-1 rounded-full">
+                        EXPLORE →
+                      </span>
+                    </motion.div>
+                  </div>
+                </div>
               </Link>
             </motion.div>
-          ))}
-        </motion.div>
-      )}
+          );
+        })}
+      </div>
     </section>
   );
 }
