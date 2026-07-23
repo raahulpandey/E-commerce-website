@@ -46,7 +46,8 @@ const productSchema = new mongoose.Schema({
 const Category = mongoose.model('Category', categorySchema);
 const Product = mongoose.model('Product', productSchema);
 
-// ─── Category metadata (icons, descriptions, images) ─────────────────────────
+// Categories to EXCLUDE (not appropriate for a standard e-commerce store)
+const EXCLUDED_CATEGORIES = new Set(['vehicle', 'motorcycle']);
 
 const CATEGORY_META = {
   'smartphones': {
@@ -218,9 +219,11 @@ async function seed() {
   const rawProducts = data.products;
   console.log(`✅ Fetched ${rawProducts.length} products\n`);
 
-  // ─── Step 2: Extract unique categories ──────────────────────────────────────
-  const uniqueCategories = [...new Set(rawProducts.map(p => p.category))];
-  console.log(`📂 Found ${uniqueCategories.length} categories: ${uniqueCategories.join(', ')}\n`);
+  // ─── Step 2: Extract unique categories (excluding vehicles/motorcycles) ────────
+  const filteredProducts = rawProducts.filter(p => !EXCLUDED_CATEGORIES.has(p.category));
+  const uniqueCategories = [...new Set(filteredProducts.map(p => p.category))];
+  console.log(`📂 Found ${uniqueCategories.length} categories (excluded: vehicles, motorcycles)`);
+  console.log(`   Categories: ${uniqueCategories.join(', ')}\n`);
 
   // ─── Step 3: Clear existing data ────────────────────────────────────────────
   console.log('🗑️  Clearing existing products and categories...');
@@ -260,7 +263,7 @@ async function seed() {
   // Mark some products as featured
   const featuredIds = new Set([1, 2, 3, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100]);
 
-  const products = rawProducts.map((p, idx) => {
+  const products = filteredProducts.map((p, idx) => {
     const priceINR = toINR(p.price);
     const discountedPriceINR = p.discountPercentage > 0
       ? Math.round(priceINR * (1 - p.discountPercentage / 100))

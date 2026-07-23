@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, Heart, Minus, Plus, Star, Check, Share2, ArrowLeft } from 'lucide-react';
+import { ShoppingCart, Heart, Minus, Plus, Star, Check, Share2, ArrowLeft, ShieldCheck, RefreshCw, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { productService, reviewService } from '@/services/product.service';
 import { useCartStore } from '@/store/cartStore';
@@ -16,18 +16,35 @@ import { Badge } from '@/components/ui/Badge';
 import { RatingStars } from '@/components/ui/RatingStars';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { DeliveryChecker } from '@/components/product/DeliveryChecker';
 import { formatPrice, getEffectivePrice, getDiscountPercentage } from '@/utils';
 import type { Review } from '@/types';
+
+// Category slugs that have clothing sizes
+const CLOTHING_CATEGORIES = ['mens-shirts', 'tops', 'womens-dresses', 'mens-shirts', 'mens-shoes', 'womens-shoes', 'womens-bags'];
+const CLOTHING_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+const SHOE_SIZES = ['UK 5', 'UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11'];
+const COLORS = [
+  { name: 'Black', hex: '#1a1a1a' },
+  { name: 'White', hex: '#f5f5f5' },
+  { name: 'Navy', hex: '#1e3a5f' },
+  { name: 'Red', hex: '#dc2626' },
+  { name: 'Green', hex: '#16a34a' },
+  { name: 'Grey', hex: '#6b7280' },
+];
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [qty, setQty] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [reviewTitle, setReviewTitle] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
 
   const { addItem: addToCart } = useCartStore();
   const { addItem: addToWishlist, removeItem: removeFromWishlist, isInWishlist } = useWishlistStore();
@@ -66,6 +83,14 @@ export default function ProductDetailPage() {
   const discountPct = getDiscountPercentage(product.price, product.discountedPrice);
   const isWishlisted = isInWishlist(product._id);
   const isOutOfStock = product.stock === 0;
+
+  // Determine if this product needs size/color selection
+  const categorySlug = (product.categoryName || '').toLowerCase().replace(/\s+/g, '-');
+  const isClothing = CLOTHING_CATEGORIES.some(c => categorySlug.includes(c.replace('mens-', '').replace('womens-', '')));
+  const isShoes = categorySlug.includes('shoe');
+  const needsSize = isClothing || isShoes;
+  const needsColor = isClothing;
+  const sizes = isShoes ? SHOE_SIZES : CLOTHING_SIZES;
 
   const handleAddToCart = async () => {
     if (!isAuthenticated) { toast.error('Please sign in to add items to cart'); return; }
@@ -200,6 +225,57 @@ export default function ProductDetailPage() {
           {/* Description */}
           <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{product.description}</p>
 
+          {/* Size Selector (for clothing/shoes) */}
+          {needsSize && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  Select Size {selectedSize && <span className="text-violet-600">— {selectedSize}</span>}
+                </p>
+                <button className="text-xs text-violet-600 underline">Size Guide</button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {sizes.map(size => (
+                  <button
+                    key={size}
+                    onClick={() => setSelectedSize(selectedSize === size ? null : size)}
+                    className={`px-3 py-1.5 text-sm rounded-lg border-2 font-medium transition-all ${
+                      selectedSize === size
+                        ? 'border-violet-600 bg-violet-600 text-white'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-violet-400'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Color Selector (for clothing) */}
+          {needsColor && (
+            <div>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white mb-2">
+                Color {selectedColor && <span className="text-violet-600">— {selectedColor}</span>}
+              </p>
+              <div className="flex gap-2">
+                {COLORS.map(color => (
+                  <button
+                    key={color.name}
+                    title={color.name}
+                    onClick={() => setSelectedColor(selectedColor === color.name ? null : color.name)}
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${
+                      selectedColor === color.name
+                        ? 'border-violet-600 scale-110 shadow-md'
+                        : 'border-slate-300 dark:border-slate-600 hover:scale-105'
+                    }`}
+                    style={{ backgroundColor: color.hex }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Quantity */}
           {!isOutOfStock && (
             <div className="flex items-center gap-4">
@@ -252,6 +328,24 @@ export default function ProductDetailPage() {
             >
               <Share2 className="h-5 w-5" />
             </button>
+          </div>
+
+          {/* Delivery Checker */}
+          <DeliveryChecker />
+
+          {/* Trust Badges */}
+          <div className="grid grid-cols-3 gap-3 pt-1">
+            {[
+              { icon: <ShieldCheck className="h-4 w-4" />, label: '100% Authentic', sub: 'Genuine products' },
+              { icon: <RefreshCw className="h-4 w-4" />, label: '30-Day Returns', sub: 'Easy return policy' },
+              { icon: <Package className="h-4 w-4" />, label: 'Secure Packaging', sub: 'Safe delivery' },
+            ].map(({ icon, label, sub }) => (
+              <div key={label} className="flex flex-col items-center text-center p-2 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                <span className="text-violet-600 mb-1">{icon}</span>
+                <span className="text-xs font-semibold text-slate-900 dark:text-white">{label}</span>
+                <span className="text-xs text-slate-400">{sub}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
